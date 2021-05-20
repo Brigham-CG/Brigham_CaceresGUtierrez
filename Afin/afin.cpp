@@ -46,7 +46,7 @@ int main(){
         cout << "mensaje descifrado: '" << mensajeDescifrado << "'" <<endl; 
     }
     else if(select == 2){
-        
+
         int a = 0, b = 0;
         cout << "Ingrese a: ";
         cin >> a ;
@@ -56,6 +56,8 @@ int main(){
         
         Afin receptor(a, b);
         string mensajeCifrado, mensajeDescifrado;
+        cout << "ingrese el mensaje cifrado: " << endl;
+        getline(cin, mensajeCifrado);
         mensajeDescifrado = receptor.descifrar(mensajeCifrado);
         cout << "mensaje descifrado: '" << mensajeDescifrado << "'" <<endl; 
     }

@@ -6,7 +6,7 @@
 using namespace std;
 class Afin {
 
-    string alf = "abcdefghijklmnopqrstuvwxyz";
+    string alf = "abcdefghijklmnopqrstuvwxyz,.-_ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789()";
     public: 
         int a = 0, b = 0, invA = 0;
         Afin();

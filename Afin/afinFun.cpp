@@ -36,7 +36,6 @@ int modulo(int a, int n){
         else
             return base + n;    
     }
-    else
         if (n > 0)
             return base + n;
         else
@@ -65,6 +64,7 @@ Afin::Afin(int a, int b){
     
     this->invA = inverso(a, alf.length());
     this->b = b;
+    cout << a << " " << b << endl;
 }
 
 string Afin::cifrar(string mensaje){
@@ -114,5 +114,6 @@ int Afin::generar_claves(){
         A = mcd(a, alf.length());
     }while(A != 1);
 
-    b = aleatorio();
+    b = aleatorio() % alf.length();
+    cout << a << " " << b << endl;
 }
