@@ -1,70 +1,59 @@
-// Tarea de Algebra abstracta
-// V1.1
 #include <iostream>
+#include "escitala.h"
 
 using namespace std;
 
-class escitala{
-    public:
-        int rows = 0, cols = 0;
-        
-        string encrypted(string message){
-
-            if (message.length() <= rows * cols){
-                string messageEncrypted;
-                for (int j = 0; j < cols; j++){
-                    for (int i = 0; i < rows; i++){
-                        if (message.length() >= i * cols + j + 1){
-                            messageEncrypted += message[j + i * cols];
-                        }
-                        else{
-                            messageEncrypted += " ";
-                        }
-                    }
-                }
-                return messageEncrypted;
-            }else{
-                return "";
-            }
-        }
-
-        string decrypted(string messageEncrypted){
-
-            if (messageEncrypted.length() == rows * cols){
-
-                string messageDecrypted;
-                for (int i = 0; i < rows; i++){
-                    for (int j = 0; j < cols; j++){
-                        messageDecrypted += messageEncrypted[i + j * rows];
-                    }
-                }
-                return messageDecrypted;
-            }
-            else{
-                return "";
-            }
-        }
-};
-
 int main(){
-    
-    escitala user1;
-    string message;
 
-    cout << "Enter the message: ";
-    getline(cin, message);
-    cout << "Enter the password(rows): ";
-    cin >> user1.rows;
-    cout << "Enter the password(cols): ";
-    cin >> user1.cols;
+    cout << "------------------------Escitala-------------------------\n"; 
+    cout << "Encriptar/Desencriptar------------------1\n";
+    cout << "Desencriptar----------------------------2\n\n";
+    cout << "Seleccionar: ";
+    int select = 0;
+    cin >> select;
+    cin.ignore();
+    if(select == 1){
 
-    message = user1.encrypted( message);
-    if (message != ""){
+        escitala emisor;
+        escitala receptor;
+        string message;
+
+        cout << "Enter the message: ";
+        getline(cin, message);
+
+        do{
+            cout << "Enter the password(rows): ";
+            cin >> emisor.rows;
+            cout << "Enter the password(cols): ";
+            cin >> emisor.cols;
+
+        }while(message.length() > emisor.rows * emisor.cols);
+        cin.ignore();
+        receptor.rows = emisor.rows;
+        receptor.cols = emisor.cols;
+        message = emisor.encrypted(message);
         cout << "Mensaje encriptado: " << message << endl;
-        message = user1.decrypted(message);
+        message = receptor.decrypted(message);
+        cout << "Mensaje desencriptado: "<< message << endl;
+    }
+    else if(select == 2){
+        // pruebas 
+        escitala receptor;
+        string message;
+        cout << "Enter the message: ";
+        getline(cin, message);
+        do{
+            cout << "Enter the password(rows): ";
+            cin >> receptor.rows;
+            cout << "Enter the password(cols): ";
+            cin >> receptor.cols;
+
+        }while(message.length() > receptor.rows * receptor.cols);
+        cin.ignore();
+        message = receptor.decrypted(message);
         cout << "Mensaje desencriptado: "<< message << endl;
     }
     else{
-        cout << "No se pudo encriptar\n";
+        return 0;
     }
 }   

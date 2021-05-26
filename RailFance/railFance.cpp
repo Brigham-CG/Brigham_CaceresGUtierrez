@@ -1,106 +1,52 @@
 #include <iostream>
-
+#include "railFance.h"
 using namespace std;
-
-class RailFance{
-
-    public:
-
-        int password = 0;
-
-        string encrypted(string cadena){
-            
-            if (password >= 2){
-                string messageEncrypted;
-
-                for (int i = 0; i < password; i++){
-
-                    int row = i;
-                    int move = 1;
-
-                    for (int j = i; j < cadena.length(); j++){
-                        
-                        if (row == i){
-                            messageEncrypted += cadena[j];
-                        }
-                        if (row + move >= password || row + move < 0){
-                            move *= -1;        
-                        }
-                        row += move;
-
-
-                    }
-                }
-                return messageEncrypted;
-            }else if(password == 1){
-
-                return cadena;
-            }else{
-                
-                return "";
-            }
-            
-        }
-
-        string decrypted(string cadena){
-            
-            if (password >= 2){
-
-                string message;
-
-                message.resize(cadena.length(), ' ');
-
-                int col = 0;
-                for (int i = 0; i < password; i++){
-
-                    int row = i;
-                    int move = 1;
-                    for (int j = i; j < cadena.length(); j++){
-                        
-                        if (row == i){
-                            message[j] = cadena[col];
-                            col++;
-                        }
-                        if (row + move >= password || row + move < 0){
-                            move *= -1;        
-                        }
-                        row += move;
-                    }
-                }   
-                
-                return message;
-
-            }else if(password == 1){
-
-                return cadena;
-            }else{
-                
-                return "";
-            }
-            
-        }
-};
 
 int main(){
 
-    RailFance user01;
-    string message;
-    cout << "Ingrese el mensaje: ";
+    cout << "-----------------Rail Fance----------------\n";
+    cout << "Encriptar Desencriptar------------1\n";
+    cout << "Desencriptar----------------------2\n\n";
+    cout << "seleccionar: ";
+    int select = 0;
+    cin >> select;
+    cin.ignore();
+    if(select == 1){
 
-    getline(cin, message);
+        RailFance emisor, receptor;
+        string message;
+        cout << "Ingrese el mensaje: ";
 
-    cout << "Ingrese la contraseña: ";
-    cin >> user01.password; 
+        getline(cin, message);
 
-    message = user01.encrypted(message);
+        do{
+            cout << "Ingrese la contraseña: ";
+            cin >> emisor.password; 
+        }while(emisor.password < 2);
 
-    if (message == ""){
-        cout << "No se pudo encriptar << endl";
+        message = emisor.encrypted(message);
+        cout << "Mensaje encriptado: '"<< message<< "'" << endl;
+
+        receptor.password = emisor.password;
+
+        cout << "Mensaje desencriptado: '"<< receptor.decrypted(message)<< "'" << endl; 
+    }
+    else if(select == 2){
+
+        RailFance receptor;
+        string message;
+        cout << "Ingrese el mensaje: ";
+
+        getline(cin, message);
+
+        do{
+            cout << "Ingrese la contraseña: ";
+            cin >> receptor.password; 
+        }while(receptor.password < 2);
+
+        cout << "Mensaje desencriptado: '"<< receptor.decrypted(message)<< "'" << endl; 
     }
     else{
-        cout << "'"<< message<< "'" << endl;
-
-        cout << "'"<< user01.decrypted(message)<< "'" << endl; 
+        return 0;
     }
-
 }
