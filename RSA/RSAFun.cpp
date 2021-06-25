@@ -34,46 +34,16 @@ int cantDigitos(ZZ N){
     return dividir;
 }
 
-// ZZ modulo(ZZ(a1), ZZ (b1)) { 
-// 	ZZ r;
-// 	ZZ a2;
+ZZ modular(ZZ(a1), ZZ (b1)) {
 
-// 	if (a1 == b1) {
-// 		return ZZ(0);
-// 	}
-// 	else if (a1 > ZZ(0)) {
-// 		a2 = (a1 / b1);
-// 		r = a1 - (a2*b1);
-// 	}
-// 	else {
-// 		a2 = (a1 / b1)+1;
-// 		r = a1 + abs(((-a2 * b1)-a2));
-// 	}
-//     cout << r << endl;
-// 	return r;
-// }
-
-
-ZZ modulo(ZZ a, ZZ n)
-{   
-    ZZ base = a - (a/n) * n;
-
-    if (base == 0)
-        return to_ZZ(0);
-    else if(base > 0)
-    {
-        if (n>=0)
-            return base;
-        else 
-            return base + n;
-    }
-    else
-    {
-        if (n>=0)
-            return base + n;
-        else 
-            return base;
-    }
+	ZZ r;
+	if (a1 >= ZZ(0)) {
+		r = a1 - ((a1 / b1) *b1);
+	}
+	else {
+		r = a1 + abs((a1 / b1) * b1);
+	}
+	return r;
 }
 
 ZZ generarsemilla() {
