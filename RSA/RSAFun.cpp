@@ -34,7 +34,7 @@ int cantDigitos(ZZ N){
     return dividir;
 }
 
-ZZ modular(ZZ(a1), ZZ (b1)) {
+ZZ modulo(ZZ(a1), ZZ (b1)) {
 
 	ZZ r;
 	if (a1 >= ZZ(0)) {

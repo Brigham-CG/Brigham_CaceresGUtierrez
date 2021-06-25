@@ -43,9 +43,11 @@ int main(){
         cout << "e: ";cin >> e;
         cout << "N: ";cin >> N;
 
+        cin.ignore();
         RSA emisor(e,N);
-
-        string mensaje = emisor.cifrar("el unico sistema completamente seguro es aquel que esta apagado encerrado en un bloque de cemento y sellado en una habitacion rodeada de alambradas y guardias armados");
+        string mensaje;
+        getline(cin, mensaje);
+        mensaje = emisor.cifrar(mensaje);
         cout << "Mensaje cifrado: " << mensaje << endl;
 
     }
