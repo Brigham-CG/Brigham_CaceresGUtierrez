@@ -61,7 +61,9 @@ RSA::RSA(int bits){
 
     SetSeed(generarsemilla());
 
-    this-> p = generar_primo(bits);
+    this-> p = generar_
+	    
+	    (bits);
     
     this-> q = generar_primo(bits);
     
@@ -92,11 +94,11 @@ RSA::RSA(ZZ p, ZZ q, ZZ e, ZZ d){
 }
 
 ZZ RSA::generar_primo(int bits){
-
-    ZZ prime;
-
-    for (;!miller_rabin(prime);prime = generar_aleatorio(bits));
-
+	
+	ZZ prime;
+	do{prime = generar_aleatorio(bits);
+	   }while(!(Primo_comprobante(prime, ZZ(5))));
+	
     return prime;
 }
 
@@ -222,6 +224,30 @@ bool RSA::miller_rabin(ZZ n){
     
     return true;
 }
+
+bool Primo_comprobante(ZZ num, ZZ loop) {
+    // Casos Base
+    if (modulo(num, ZZ(2)) == 0) return false; //Si es par, no es primo
+    if (num <= 1 || num == 4) return false; //Si es menor que o igual a 1 no es primo y 4 es par pero porsiacaso
+    if (num <= 3) return true; //los numeros menores a tres que no sean 1 o 0 son primos
+
+    // num-1 = 2^exp * r ; r >= 1
+    ZZ exp = num - 1;
+
+    //Hallamos el exponente d
+    while (modulo(exp, ZZ(2)) == 0)
+        exp /= 2;
+
+
+    // Realizamos las iteraciones de comprobacion con miller_rabin
+    for (ZZ i(0); i < loop; i++)
+        if (!miller_rabin(exp, num))
+            return false;
+
+    return true;
+}
+
+
 
 long RSA::euclides(ZZ e, ZZ N){
     
