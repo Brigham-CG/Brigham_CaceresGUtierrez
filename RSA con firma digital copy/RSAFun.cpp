@@ -4,6 +4,7 @@
 #include <NTL/ZZ.h>
 #include <sstream>
 #include "RSA.h"
+#include <fstream>
 
 using namespace std;
 using namespace NTL;
@@ -18,20 +19,6 @@ string toBinary(ZZ n)
 		n /= 2;
 	}
 	return r;
-}
-
-int cantDigitos(ZZ N){
-
-    ZZ n(N);
-
-    int dividir = 0;
-
-    do {
-        ++dividir; 
-        n /= 10;
-    } while (n != 0);
-
-    return dividir;
 }
 
 ZZ modulo(ZZ(a1), ZZ (b1)) {
@@ -53,7 +40,6 @@ ZZ generarsemilla() {
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();// End clock
 
 	ZZ seed(std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count());
-    cout << "termino la generacion\n";
 	return seed;
 }
 
@@ -74,12 +60,6 @@ RSA::RSA(int bits){
     }while(euclides(e, fN)!=1);
     
     this-> d = inversa(e, fN);
-
-    cout << "p: " << p << endl;
-    cout << "q: " << q << endl;
-    cout << "N: " << N << endl;
-    cout << "e: " << e << endl;
-    cout << "d: " << d << endl;
 }
 
 RSA::RSA(ZZ p, ZZ q, ZZ e, ZZ d){
@@ -90,6 +70,20 @@ RSA::RSA(ZZ p, ZZ q, ZZ e, ZZ d){
     this->e = e;
     this->d = d;
 }
+
+RSA::RSA(ZZ eR, ZZ NR){
+
+    // put values
+    this->eR = eR;
+    this->NR = NR;
+}
+
+void RSA::establecer(ZZ eR, ZZ NR){
+
+    this->eR = eR;
+    this->NR = NR;
+}
+
 
 ZZ RSA::generar_primo(int bits){
 
@@ -112,11 +106,6 @@ ZZ RSA::generar_aleatorio(int bits){
     return number;
 }
 
-RSA::RSA(ZZ e, ZZ N){
-    // put values
-    this->e = e;
-    this->N = N;
-}
 
 vector<ZZ> RSA::euclides_extendido(ZZ a, ZZ b)
 {   
@@ -261,9 +250,9 @@ string RSA::cifrar(string mensaje){
     string transform;
 
     // obtener la cantidad de digitos de N
-    int cantN = ZZ_to_string(N).length();
+    int cantNR = ZZ_to_string(N).length();
 
-    cantN--;
+    cantNR--;
 
     // cantidad de digitos del alfabeto
 
@@ -281,13 +270,13 @@ string RSA::cifrar(string mensaje){
         transform +=pos;
     
     }
-    
+
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
 
     // dividir
 
-    while(modulo(to_ZZ(transform.size()), to_ZZ(cantN)) != 0){
+    while(modulo(to_ZZ(transform.size()), to_ZZ(cantNR)) != 0){
 
         transform+=alfLen;
     }
@@ -296,19 +285,19 @@ string RSA::cifrar(string mensaje){
     
     string cifrado;
     
-    for (int i = 0; i < transform.length(); i += cantN)
+    for (int i = 0; i < transform.length(); i += cantNR)
     {  
-        ZZ number(conv<ZZ>(transform.substr(i,cantN).c_str()));
+        ZZ number(conv<ZZ>(transform.substr(i,cantNR).c_str()));
         
-        ZZ exp = left_to_right_binary_exponenciacion(number, e, N);
+        ZZ exp = left_to_right_binary_exponenciacion(number, eR, NR);
         string ci = ZZ_to_string(exp);
-        int tamanio = cantN-ci.length()+1;
+        int tamanio = cantNR-ci.length()+1;
         
         cifrado.append(tamanio, '0');
 
         cifrado +=ci;
+
     }
-    
     return cifrado;
 }
 
@@ -357,6 +346,121 @@ string RSA::descifrar(string mensaje){
     }
     return descifrado;
 }
+
+string RSA::firma_digital_cifrado(string data)
+{
+    
+    string transform;
+
+    // obtener la cantidad de digitos de N
+    int cantN = ZZ_to_string(NR).length();
+
+    cantN--;
+
+    // cantidad de digitos del alfabeto
+
+    int cantA = to_string(alfabeto.length() - 1).length();
+    // separando en numeros
+
+    for (int i = 0; i < data.length(); i ++){
+
+        string pos = to_string(alfabeto.find(data[i]));
+
+        int tamanio = cantA-pos.length();
+
+        transform.append(tamanio, '0');
+        transform +=pos;
+    }
+
+    // tamaño de alfabeto
+    string alfLen = to_string(alfabeto.length());
+
+    // dividir
+
+    while(modulo(to_ZZ(transform.size()), to_ZZ(cantN)) != 0){
+
+        transform+=alfLen;
+    }
+    
+    // exponenciacion
+    
+    string firma;
+    
+    for (int i = 0; i < transform.length(); i += cantN)
+    {  
+        
+        ZZ number(conv<ZZ>(transform.substr(i,cantN).c_str()));
+        ZZ exp = restoChino(number, d, N);
+        exp = left_to_right_binary_exponenciacion(exp, eR, NR);
+
+        string ci = ZZ_to_string(exp);
+        int tamanio = cantN-ci.length()+1;
+        
+        firma.append(tamanio, '0');
+
+        firma+=ci;
+    }
+    
+    return firma;
+}
+
+string RSA::firma_digital_descifrado(string firma)
+{
+    // obtener la cantidad de digitos de N
+
+    int cantN = ZZ_to_string(N).length();
+    
+    // exponenciacion
+
+    string transform;
+
+
+    for (int i = 0; i < firma.length(); i+=cantN)
+    {   
+        ZZ number(conv<ZZ>(firma.substr(i,cantN).c_str()));
+        ZZ des = restoChino(number, d, N);
+        des = left_to_right_binary_exponenciacion(des, eR, NR);
+        string di = ZZ_to_string(des);
+        int tamanio = cantN-di.length()-1;
+
+        transform.append(tamanio, '0');
+
+        transform += di;
+    }
+    // cantidad de digitos del alfabeto
+
+    int cantA = to_string(alfabeto.length() - 1).length();
+
+    // tamaño de alfabeto
+    string alfLen = to_string(alfabeto.length());
+    int fin = transform.find(alfLen);
+
+    transform = transform.substr(0, fin);
+
+    // separando en numeros
+    string descifrado;
+
+    for (int i = 0; i < transform.length(); i+=cantA){
+        
+        int pos = stoi(transform.substr(i, cantA));
+        char carc = alfabeto[pos];
+
+        descifrado += carc;
+    }
+    return descifrado;
+}
+
+string RSA::leer_datos(string fichero)
+{
+    ifstream data (fichero, ifstream::in);
+    string readData, line;
+    while(getline(data, line))
+    {
+        readData+=line;
+    }
+    data.close();
+    return readData;
+}   
 
 ZZ RSA::getE()
 {
