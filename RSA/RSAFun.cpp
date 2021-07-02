@@ -3,6 +3,9 @@
 #include <ctime>
 #include <NTL/ZZ.h>
 #include <sstream>
+#include <math.h>
+#include <chrono>
+#include <time.h>
 #include "RSA.h"
 
 using namespace std;
@@ -53,12 +56,14 @@ ZZ generarsemilla() {
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();// End clock
 
 	ZZ seed(std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count());
+    cout << "termino la generacion\n";
 	return seed;
 }
 
 RSA::RSA(int bits){
 
-    SetSeed(generarsemilla());
+    // SetSeed(generarsemilla());
+    srand(time(0));
 
     this-> p = generar_primo(bits);
     
@@ -73,11 +78,17 @@ RSA::RSA(int bits){
     }while(euclides(e, fN)!=1);
     
     this-> d = inversa(e, fN);
+
+    cout << "p: " << p << endl;
+    cout << "q: " << q << endl;
+    cout << "N: " << N << endl;
+    cout << "e: " << e << endl;
+    cout << "d: " << d << endl;
 }
 
 RSA::RSA(ZZ p, ZZ q, ZZ e, ZZ d){
 
-    this->p =  p;
+    this->p = p;
     this->q = q;
     this->N = p * q;
     this->e = e;
@@ -93,17 +104,46 @@ ZZ RSA::generar_primo(int bits){
     return prime;
 }
 
+
+
 ZZ RSA::generar_aleatorio(int bits){
 
     ZZ min(exponenciacion(to_ZZ(2), to_ZZ(bits))>>1), max(exponenciacion(to_ZZ(2), to_ZZ(bits)) - 1);
 
     ZZ number;
     do{
-        number = RandomLen_ZZ(bits);
+        number = generate_random(bits);
     }while(number < min || number > max);
 
     return number;
 }
+
+
+ZZ RSA::generate_bit() {
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();// Start clock
+    // cout << "."; // Linea important para incrementar la variabilidad
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();// End clock
+
+    ZZ seed(std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count());
+
+    ZZ seed_2 = modulo(seed, ZZ(2));
+
+    return seed_2;
+}
+
+ZZ RSA::generate_random(int bits) {
+	ZZ random(0);
+	ZZ power(2);
+	random = random + (generate_bit());
+	for (int i = 1;i<bits;i++) {
+		random = random + (generate_bit()*power);
+		power = power * 2;
+	}
+    cout << "random: " << random << endl;
+	return random;
+}
+
 
 RSA::RSA(ZZ e, ZZ N){
     // put values
@@ -151,7 +191,7 @@ vector<ZZ> RSA::euclides_extendido(ZZ a, ZZ b)
 ZZ RSA::restoChino(ZZ c, ZZ d, ZZ N)
 {
 
-    vector <ZZ> a = {exponenciacion_mod(c,modulo(d, p - 1), N), exponenciacion_mod(c,modulo(d, q- 1), N)};
+    vector <ZZ> a = {left_to_right_binary_exponenciacion(c,modulo(d, p - 1), N), left_to_right_binary_exponenciacion(c,modulo(d, q- 1), N)};
 
     vector<ZZ> inversos = euclides_extendido(p, q);
 
@@ -171,7 +211,7 @@ ZZ RSA::exponenciacion(ZZ b, ZZ e){
     return result;
 }
 
-ZZ RSA::exponenciacion_mod(ZZ a, ZZ e, ZZ n) {
+ZZ RSA::left_to_right_binary_exponenciacion(ZZ a, ZZ e, ZZ n) {
 	ZZ A(1);
 	string bin = toBinary(e);
 	for (int i = bin.size(); i != -1; i--) {
@@ -182,7 +222,6 @@ ZZ RSA::exponenciacion_mod(ZZ a, ZZ e, ZZ n) {
 	}
 	return A;
 }
-
 
 bool RSA::miller_rabin(ZZ n){
     
@@ -198,11 +237,11 @@ bool RSA::miller_rabin(ZZ n){
     ZZ a(2);
     for (int i = 0; i < 10; i++){
 
-        ZZ x = exponenciacion_mod(a, t, n);
+        ZZ x = left_to_right_binary_exponenciacion(a, t, n);
         if (x == 1 || x == (n-1))
             continue;
         for (ZZ r(0); r < (s-1); r++){
-            x = exponenciacion_mod(x, to_ZZ(2), n);
+            x = left_to_right_binary_exponenciacion(x, to_ZZ(2), n);
             if(x == 1){
                 return false;
             }
@@ -234,15 +273,28 @@ long RSA::euclides(ZZ e, ZZ N){
 
 ZZ RSA::inversa(ZZ e, ZZ N){
 
-    return modulo(euclides_extendido(e, N)[0], N);
+    ZZ inversa = euclides_extendido(e, N)[0];
+    if (inversa < 0){
+        inversa = modulo(euclides_extendido(e, N)[0], N);
+    }
+    return inversa;
 }
+
+string ZZ_to_string(ZZ num)
+{
+    stringstream buffer;
+
+    buffer<<num;
+
+    return buffer.str();  
+};
 
 string RSA::cifrar(string mensaje){
 
     string transform;
 
     // obtener la cantidad de digitos de N
-    int cantN = cantDigitos(N);
+    int cantN = ZZ_to_string(N).length();
 
     cantN--;
 
@@ -258,46 +310,35 @@ string RSA::cifrar(string mensaje){
 
         int tamanio = cantA-pos.length();
 
-        for (int j = 0; j < tamanio; j++){
-
-            transform += "0";
-        }
-
+        transform.append(tamanio, '0');
         transform +=pos;
     
     }
     
-
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
 
     // dividir
 
     while(modulo(to_ZZ(transform.size()), to_ZZ(cantN)) != 0){
-        
+
         transform+=alfLen;
     }
 
+    cout << "transform: " << transform << endl;
     // exponenciacion
-
+    
     string cifrado;
-
+    
     for (int i = 0; i < transform.length(); i += cantN)
     {  
         ZZ number(conv<ZZ>(transform.substr(i,cantN).c_str()));
         
-        ZZ exp = exponenciacion_mod(number, e, N);
-
-        stringstream buffer;
-
-        buffer<<exp;
-
-        string ci = buffer.str();
-
+        ZZ exp = left_to_right_binary_exponenciacion(number, e, N);
+        string ci = ZZ_to_string(exp);
         int tamanio = cantN-ci.length()+1;
         
-        for (int j = 0; j < tamanio; j++)
-            cifrado += "0";
+        cifrado.append(tamanio, '0');
 
         cifrado +=ci;
     }
@@ -305,12 +346,12 @@ string RSA::cifrar(string mensaje){
     return cifrado;
 }
 
-
 string RSA::descifrar(string mensaje){
 
     // obtener la cantidad de digitos de N
-    int cantN = cantDigitos(N);
 
+    int cantN = ZZ_to_string(N).length();
+    
     // exponenciacion
 
     string transform;
@@ -320,36 +361,34 @@ string RSA::descifrar(string mensaje){
         ZZ number(conv<ZZ>(mensaje.substr(i,cantN).c_str()));
         ZZ des = restoChino(number, d, N);
 
-        stringstream buffer;
+        string di = ZZ_to_string(des);
 
-        buffer<< des;
+        int tamanio = cantN-di.length()-1;
 
-        string di = buffer.str();
+        transform.append(tamanio, '0');
 
-        int tamanio = cantN-di.length() - 1;
-
-        for (int j = 0; j < tamanio; j++){
-
-            transform += "0";
-        }
-        
         transform += di;
     }
-
     // cantidad de digitos del alfabeto
+    cout << "transform: " << transform << endl;
 
     int cantA = to_string(alfabeto.length() - 1).length();
 
-    // separando en numeros
+    // tamaño de alfabeto
+    string alfLen = to_string(alfabeto.length());
+    int fin = transform.find(alfLen);
 
+    transform = transform.substr(0, fin);
+
+    // separando en numeros
     string descifrado;
 
     for (int i = 0; i < transform.length(); i+=cantA){
         
         int pos = stoi(transform.substr(i, cantA));
-    
-        descifrado += alfabeto[pos];
+        char carc = alfabeto[pos];
 
+        descifrado += carc;
     }
     return descifrado;
 }
