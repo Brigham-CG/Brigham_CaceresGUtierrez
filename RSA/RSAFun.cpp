@@ -122,7 +122,7 @@ ZZ RSA::generar_aleatorio(int bits){
 ZZ RSA::generate_bit() {
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();// Start clock
-    // cout << "."; // Linea important para incrementar la variabilidad
+    cout << "."; // Linea important para incrementar la variabilidad
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();// End clock
 
     ZZ seed(std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count());
@@ -140,7 +140,6 @@ ZZ RSA::generate_random(int bits) {
 		random = random + (generate_bit()*power);
 		power = power * 2;
 	}
-    cout << "random: " << random << endl;
 	return random;
 }
 
