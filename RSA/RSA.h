@@ -20,6 +20,7 @@ class RSA{
         ZZ generate_bit();
         ZZ generate_random(int);
         ZZ generar_primo(int);
+        bool Primo_comprobante(ZZ, ZZ);
         ZZ left_to_right_binary_exponenciacion(ZZ, ZZ, ZZ);
         ZZ exponenciacion(ZZ, ZZ);
         long euclides(ZZ, ZZ);
@@ -28,7 +29,7 @@ class RSA{
         ZZ generar_aleatorio(int);
         bool miller_rabin(ZZ);
         ZZ restoChino(ZZ, ZZ, ZZ);
-
+    
         ZZ getE();
         ZZ getN();
         string cifrar(string);

@@ -31,13 +31,13 @@ class RSA{
         void establecer(ZZ, ZZ);
         string cifrar(string);
         string descifrar(string);
-        string firma_digital_cifrado(string);
+        string firma_digital_cifrado();
         string firma_digital_descifrado(string);
         string leer_datos(string);
 
     private:
 
         ZZ d, e,N,p,q, eR, NR;
-        string alfabeto = "abcdefghijklmnopqrstuvwxyz -0123456789";
+        string alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ,.-( )abcdefghijklmnopqrstuvwxyz<>*1234567890[]";
         
 };

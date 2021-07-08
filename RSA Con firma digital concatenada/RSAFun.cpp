@@ -262,7 +262,9 @@ string RSA::cifrar(string mensaje){
 
     for (int i = 0; i < mensaje.length(); i ++){
 
-        string pos = to_string(alfabeto.find(mensaje[i]));
+        int posI = alfabeto.find(mensaje[i]);
+        
+        string pos = to_string(posI);
 
         int tamanio = cantA-pos.length();
 
@@ -298,6 +300,7 @@ string RSA::cifrar(string mensaje){
         cifrado +=ci;
 
     }
+    cifrado += firma_digital_cifrado();
     return cifrado;
 }
 
@@ -309,9 +312,9 @@ string RSA::descifrar(string mensaje){
     
     // exponenciacion
 
-    string transform;
+    string descifrado;
 
-    for (int i = 0; i < mensaje.length(); i+=cantN)
+    for (int i = 0; i < mensaje.length() / 2; i+=cantN)
     {
         ZZ number(conv<ZZ>(mensaje.substr(i,cantN).c_str()));
         ZZ des = restoChino(number, d, N);
@@ -320,36 +323,39 @@ string RSA::descifrar(string mensaje){
 
         int tamanio = cantN-di.length()-1;
 
-        transform.append(tamanio, '0');
+        descifrado.append(tamanio, '0');
 
-        transform += di;
+        descifrado += di;
     }
+
     // cantidad de digitos del alfabeto
 
     int cantA = to_string(alfabeto.length() - 1).length();
 
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
-    int fin = transform.find(alfLen);
+    int fin = descifrado.find(alfLen);
 
-    transform = transform.substr(0, fin);
-
+    string firma = mensaje.substr(mensaje.length() / 2);
+    descifrado = descifrado.substr(0, fin);
     // separando en numeros
-    string descifrado;
 
-    for (int i = 0; i < transform.length(); i+=cantA){
+    string transform;
+
+    for (int i = 0; i < descifrado.length(); i+=cantA){
         
-        int pos = stoi(transform.substr(i, cantA));
+        int pos = stoi(descifrado.substr(i, cantA));
         char carc = alfabeto[pos];
 
-        descifrado += carc;
+        transform += carc;
     }
-    return descifrado;
+    cout << "firma descifrada: " << firma_digital_descifrado(firma) << endl;
+    return transform;
 }
 
-string RSA::firma_digital_cifrado(string data)
+string RSA::firma_digital_cifrado()
 {
-    
+    string data = leer_datos("firma.txt"); 
     string transform;
 
     // obtener la cantidad de digitos de N
@@ -390,7 +396,7 @@ string RSA::firma_digital_cifrado(string data)
     {  
         
         ZZ number(conv<ZZ>(transform.substr(i,cantN).c_str()));
-        ZZ exp = restoChino(number, d, N);
+        ZZ exp = left_to_right_binary_exponenciacion(number, d, N);
         exp = left_to_right_binary_exponenciacion(exp, eR, NR);
 
         string ci = ZZ_to_string(exp);
@@ -414,11 +420,10 @@ string RSA::firma_digital_descifrado(string firma)
 
     string transform;
 
-
     for (int i = 0; i < firma.length(); i+=cantN)
     {   
         ZZ number(conv<ZZ>(firma.substr(i,cantN).c_str()));
-        ZZ des = restoChino(number, d, N);
+        ZZ des = left_to_right_binary_exponenciacion(number, d, N);
         des = left_to_right_binary_exponenciacion(des, eR, NR);
         string di = ZZ_to_string(des);
         int tamanio = cantN-di.length()-1;

@@ -5,6 +5,7 @@
 #include <sstream>
 #include "RSA.h"
 #include <fstream>
+#include <algorithm>
 
 using namespace std;
 using namespace NTL;
@@ -33,19 +34,32 @@ ZZ modulo(ZZ(a1), ZZ (b1)) {
 	return r;
 }
 
-ZZ generarsemilla() {
+ZZ RSA::generate_bit() {
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();// Start clock
-	cout << "Se esta generando la semilla aleatoria . . . " << endl; //Linea opcional para incrementar variabilidad de la semilla
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();// End clock
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();// Start clock
+    cout << "."; // Linea important para incrementar la variabilidad
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();// End clock
 
-	ZZ seed(std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count());
-	return seed;
+    ZZ seed(std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count());
+
+    ZZ seed_2 = modulo(seed, ZZ(2));
+
+    return seed_2;	
+}
+
+ZZ RSA::generate_random(int bits)
+{
+	ZZ random(0);
+	ZZ power(2);
+	random = random + (generate_bit());
+	for (int i = 1;i<bits;i++) {
+		random = random + (generate_bit()*power);
+		power = power * 2;
+	}
+	return random;
 }
 
 RSA::RSA(int bits){
-
-    SetSeed(generarsemilla());
 
     this-> p = generar_primo(bits);
     
@@ -57,13 +71,20 @@ RSA::RSA(int bits){
     
     do{
         this-> e = generar_aleatorio(bits);
-    }while(euclides(e, fN)!=1);
+    }while(euclides_menor_resto(this->e, fN)!=1);
     
-    this-> d = inversa(e, fN);
+    this-> d = inversa(this->e, fN);
+
+    // cout << "P: " << p << endl;
+    // cout << "n: " << N << endl;
+    // cout << "q: " << q << endl;
+    // cout << "e: " << e << endl;
+    // cout << "d: " << d << endl;
+
 }
 
 RSA::RSA(ZZ p, ZZ q, ZZ e, ZZ d){
-
+    // para pruebas
     this->p = p;
     this->q = q;
     this->N = p * q;
@@ -73,7 +94,7 @@ RSA::RSA(ZZ p, ZZ q, ZZ e, ZZ d){
 
 RSA::RSA(ZZ eR, ZZ NR){
 
-    // put values
+    // emisor
     this->eR = eR;
     this->NR = NR;
 }
@@ -83,7 +104,6 @@ void RSA::establecer(ZZ eR, ZZ NR){
     this->eR = eR;
     this->NR = NR;
 }
-
 
 ZZ RSA::generar_primo(int bits){
 
@@ -101,11 +121,11 @@ ZZ RSA::generar_aleatorio(int bits){
     ZZ number;
     do{
         number = RandomLen_ZZ(bits);
+        // number = generate_random(bits); // No funcional para Linux
     }while(number < min || number > max);
 
     return number;
 }
-
 
 vector<ZZ> RSA::euclides_extendido(ZZ a, ZZ b)
 {   
@@ -212,19 +232,23 @@ bool RSA::miller_rabin(ZZ n){
     return true;
 }
 
-long RSA::euclides(ZZ e, ZZ N){
-    
-    ZZ q, r;
-    do{
-        q = e/N;
-        r = e - N*q;
-        e = N;
-        N = r;
+ZZ RSA::euclides_menor_resto(ZZ a, ZZ b){
 
-    }while(r != 0);
-    long result = 0;
-    conv(result, e);
-    return result;
+    ZZ c, d, r;
+    if (a == 0)
+        c = b;
+    else
+    {
+        c = a;
+        d = b;
+        while(d != 0)
+        {
+            r = c - d * (c/d + 1/2);
+            c = d;
+            d = r;
+        }
+    }
+    return abs(c);
 }
 
 ZZ RSA::inversa(ZZ e, ZZ N){
@@ -243,37 +267,42 @@ string ZZ_to_string(ZZ num)
     buffer<<num;
 
     return buffer.str();  
-};
+}
+
+string RSA::bloques(string mensaje, int cantA)
+{
+    string transform;
+
+    for (int i = 0; i < mensaje.length(); i ++){
+
+        int posI = alfabeto.find(mensaje[i]);
+        string pos = to_string(posI);
+        
+        int tamanio = cantA-pos.length();
+        
+        transform.append(tamanio, '0');
+        transform +=pos;
+
+    }
+    return transform;
+}
 
 string RSA::cifrar(string mensaje){
-
-    string transform;
 
     // obtener la cantidad de digitos de N
     int cantNR = ZZ_to_string(N).length();
 
     cantNR--;
-
+    
     // cantidad de digitos del alfabeto
 
     int cantA = to_string(alfabeto.length() - 1).length();
-
+    
     // separando en numeros
 
-    for (int i = 0; i < mensaje.length(); i ++){
-
-        string pos = to_string(alfabeto.find(mensaje[i]));
-
-        int tamanio = cantA-pos.length();
-
-        transform.append(tamanio, '0');
-        transform +=pos;
-    
-    }
-
+    string transform = bloques(mensaje, cantA);
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
-
     // dividir
 
     while(modulo(to_ZZ(transform.size()), to_ZZ(cantNR)) != 0){
@@ -287,6 +316,7 @@ string RSA::cifrar(string mensaje){
     
     for (int i = 0; i < transform.length(); i += cantNR)
     {  
+        
         ZZ number(conv<ZZ>(transform.substr(i,cantNR).c_str()));
         
         ZZ exp = left_to_right_binary_exponenciacion(number, eR, NR);
@@ -298,7 +328,6 @@ string RSA::cifrar(string mensaje){
         cifrado +=ci;
 
     }
-    cifrado += firma_digital_cifrado();
     return cifrado;
 }
 
@@ -310,9 +339,9 @@ string RSA::descifrar(string mensaje){
     
     // exponenciacion
 
-    string descifrado;
+    string transform;
 
-    for (int i = 0; i < mensaje.length() / 2; i+=cantN)
+    for (int i = 0; i < mensaje.length(); i+=cantN)
     {
         ZZ number(conv<ZZ>(mensaje.substr(i,cantN).c_str()));
         ZZ des = restoChino(number, d, N);
@@ -321,40 +350,43 @@ string RSA::descifrar(string mensaje){
 
         int tamanio = cantN-di.length()-1;
 
-        descifrado.append(tamanio, '0');
+        transform.append(tamanio, '0');
 
-        descifrado += di;
+        transform += di;
     }
-
     // cantidad de digitos del alfabeto
 
     int cantA = to_string(alfabeto.length() - 1).length();
 
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
-    int fin = descifrado.find(alfLen);
 
-    string firma = mensaje.substr(mensaje.length() / 2);
-    descifrado = descifrado.substr(0, fin);
+    int fin = 0;
+    for (fin = transform.length() - cantA; fin > 0; fin -= cantA)
+    {
+        if(transform.substr(fin, cantA) != alfLen)
+            break;
+    }
+
+    transform = transform.substr(0, fin + cantA);
+
     // separando en numeros
+    string descifrado;
 
-    string transform;
-
-    for (int i = 0; i < descifrado.length(); i+=cantA){
+    for (int i = 0; i < transform.length(); i+=cantA){
         
-        int pos = stoi(descifrado.substr(i, cantA));
+        int pos = stoi(transform.substr(i, cantA));
+        
         char carc = alfabeto[pos];
 
-        transform += carc;
+        descifrado += carc;
+
     }
-    cout << "firma descifrada: " << firma_digital_descifrado(firma) << endl;
-    return transform;
+    return descifrado;
 }
 
-string RSA::firma_digital_cifrado()
+string RSA::firma_digital_cifrado(string data)
 {
-    string data = leer_datos("firma.txt"); 
-    string transform;
 
     // obtener la cantidad de digitos de N
     int cantN = ZZ_to_string(NR).length();
@@ -366,15 +398,7 @@ string RSA::firma_digital_cifrado()
     int cantA = to_string(alfabeto.length() - 1).length();
     // separando en numeros
 
-    for (int i = 0; i < data.length(); i ++){
-
-        string pos = to_string(alfabeto.find(data[i]));
-
-        int tamanio = cantA-pos.length();
-
-        transform.append(tamanio, '0');
-        transform +=pos;
-    }
+    string transform = bloques(data, cantA);
 
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
@@ -425,7 +449,6 @@ string RSA::firma_digital_descifrado(string firma)
         des = left_to_right_binary_exponenciacion(des, eR, NR);
         string di = ZZ_to_string(des);
         int tamanio = cantN-di.length()-1;
-
         transform.append(tamanio, '0');
 
         transform += di;
@@ -436,9 +459,15 @@ string RSA::firma_digital_descifrado(string firma)
 
     // tamaño de alfabeto
     string alfLen = to_string(alfabeto.length());
-    int fin = transform.find(alfLen);
+    
+    int fin = 0;
+    for (fin = transform.length() - cantA; fin > 0; fin -= cantA)
+    {
+        if(transform.substr(fin, cantA) != alfLen)
+            break;
+    }
 
-    transform = transform.substr(0, fin);
+    transform = transform.substr(0, fin + cantA);
 
     // separando en numeros
     string descifrado;
