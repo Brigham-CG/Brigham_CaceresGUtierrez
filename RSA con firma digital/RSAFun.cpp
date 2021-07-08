@@ -468,7 +468,7 @@ string RSA::firma_digital_descifrado(string firma)
     }
 
     transform = transform.substr(0, fin + cantA);
-
+    
     // separando en numeros
     string descifrado;
 
